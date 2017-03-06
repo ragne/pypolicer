@@ -1,0 +1,9 @@
+daemonize
+Flask                                                                                                  
+Flask-RESTful
+flask-cors
+gevent
+rethinkdb
+pytz
+watchdog
+configobj
