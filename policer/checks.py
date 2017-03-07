@@ -282,7 +282,7 @@ class BasicCheck(object):
             "Check %s returned result(action, reason, truth): %s", self.name, res)
         return res
 
-    def success_result(self, action=Action.PERMIT, reason=''):
+    def success_result(self, action=Action.DUNNO, reason=''):
         """
         Format success result with given action and reason
 
@@ -292,6 +292,9 @@ class BasicCheck(object):
         :type reason: str
         :return: formatted result
         """
+        dunno_mode = self.settings.get('global', {}).get('dunno_mode', True)
+        if not dunno_mode:
+            action = Action.PERMIT
         res = (action, reason, True)
         self.logger.debug(
             "Action %s returned result(action, reason, truth): %s", self.name, res)
@@ -535,6 +538,10 @@ class BlockDeliveryForAll(BasicCheck):
             if '*' in denied_addrs:
                 self.logger.info("Wildcard found in list of denied addresses. It's strange, but we're still\
 block and reply with unknown user")
+                # check, if someone is allowed
+                if sender in allowed_addrs:
+                    self.logger.debug("User %s is allowed to ignore wildcard blocking! Allowing..", sender)
+                    return self.success_result()
                 return self.failed_result(reason="User unknown in local recipient table")
 
             if sender not in allowed_addrs or '*' not in allowed_addrs:
@@ -544,7 +551,7 @@ block and reply with unknown user")
                 if '*' in allowed_addrs:
                     self.logger.debug("Wildcard found, allow")
                 return self.success_result()
-        return self.success_result()
+        return self.success_result(action=Action.DUNNO)
 
 
 class RateLimitCheck(BasicCheck):
